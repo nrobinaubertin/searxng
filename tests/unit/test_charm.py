@@ -23,53 +23,56 @@ class TestCharm(unittest.TestCase):
         self.addCleanup(self.harness.cleanup)
         self.harness.begin()
 
-    def test_httpbin_pebble_ready(self):
+    def test_searxng_pebble_ready(self):
         # Expected plan after Pebble ready with default config
         expected_plan = {
             "services": {
-                "httpbin": {
+                "searxng": {
                     "override": "replace",
-                    "summary": "httpbin",
-                    "command": "gunicorn -b 0.0.0.0:80 httpbin:app -k gevent",
+                    "summary": "searxng",
+                    "command": "/usr/local/searxng/dockerfiles/docker-entrypoint.sh",
                     "startup": "enabled",
-                    "environment": {"GUNICORN_CMD_ARGS": "--log-level info"},
+                    "environment": {
+                        "AUTOCOMPLETE": "",
+                        "INSTANCE_NAME": "searxng",
+                    },
                 }
             },
         }
         # Simulate the container coming up and emission of pebble-ready event
-        self.harness.container_pebble_ready("httpbin")
+        self.harness.container_pebble_ready("searxng")
         # Get the plan now we've run PebbleReady
-        updated_plan = self.harness.get_container_pebble_plan("httpbin").to_dict()
+        updated_plan = self.harness.get_container_pebble_plan("searxng").to_dict()
         # Check we've got the plan we expected
         self.assertEqual(expected_plan, updated_plan)
         # Check the service was started
-        service = self.harness.model.unit.get_container("httpbin").get_service("httpbin")
+        service = self.harness.model.unit.get_container("searxng").get_service("searxng")
         self.assertTrue(service.is_running())
         # Ensure we set an ActiveStatus with no message
         self.assertEqual(self.harness.model.unit.status, ActiveStatus())
 
     def test_config_changed_valid_can_connect(self):
         # Ensure the simulated Pebble API is reachable
-        self.harness.set_can_connect("httpbin", True)
+        self.harness.set_can_connect("searxng", True)
         # Trigger a config-changed event with an updated value
-        self.harness.update_config({"log-level": "debug"})
+        self.harness.update_config({"instance-name": "foo"})
         # Get the plan now we've run PebbleReady
-        updated_plan = self.harness.get_container_pebble_plan("httpbin").to_dict()
-        updated_env = updated_plan["services"]["httpbin"]["environment"]
+        updated_plan = self.harness.get_container_pebble_plan("searxng").to_dict()
+        updated_env = updated_plan["services"]["searxng"]["environment"]
         # Check the config change was effective
         self.assertEqual(updated_env, {"GUNICORN_CMD_ARGS": "--log-level debug"})
         self.assertEqual(self.harness.model.unit.status, ActiveStatus())
 
     def test_config_changed_valid_cannot_connect(self):
         # Trigger a config-changed event with an updated value
-        self.harness.update_config({"log-level": "debug"})
+        self.harness.update_config({"instance-name": "foo"})
         # Check the charm is in WaitingStatus
         self.assertIsInstance(self.harness.model.unit.status, WaitingStatus)
 
     def test_config_changed_invalid(self):
         # Ensure the simulated Pebble API is reachable
-        self.harness.set_can_connect("httpbin", True)
+        self.harness.set_can_connect("searxng", True)
         # Trigger a config-changed event with an updated value
-        self.harness.update_config({"log-level": "foobar"})
+        self.harness.update_config({"autocomplete": "foobar"})
         # Check the charm is in BlockedStatus
         self.assertIsInstance(self.harness.model.unit.status, BlockedStatus)
