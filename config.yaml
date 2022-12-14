@@ -9,12 +9,6 @@ options:
       Configures the displayed name of the instance.
     default: "searxng"
     type: string
-  base-url:
-    description: |
-      Set custom base url.
-      Example value: "https://your.custom.host/location/"
-    default: ""
-    type: string
   autocomplete:
     description: |
       Choose an autocomplete backend.

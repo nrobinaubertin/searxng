@@ -17,11 +17,12 @@ import logging
 from ops.charm import CharmBase
 from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
+from ops.pebble import ExecError
 
 # Log messages can be retrieved using juju debug-log
 logger = logging.getLogger(__name__)
 
-VALID_AUTOCOMPLETE_BACKENDS = ["dbpedia", "duckduckgo", "google", "startpage", "swisscows", "qwant", "wikipedia"]
+VALID_AUTOCOMPLETE_BACKENDS = ["", "dbpedia", "duckduckgo", "google", "startpage", "swisscows", "qwant", "wikipedia"]
 
 
 class SearxngK8SCharm(CharmBase):
@@ -58,28 +59,49 @@ class SearxngK8SCharm(CharmBase):
 
         Learn more about config at https://juju.is/docs/sdk/config
         """
+
+        container = self.unit.get_container("searxng")
+        services = container.get_plan().to_dict().get("services", {})
+
         # Fetch the new config value
         autocomplete = self.model.config["autocomplete"].lower()
 
-        # Do some validation of the configuration option
-        if autocomplete in VALID_AUTOCOMPLETE_BACKENDS:
-            # The config is good, so update the configuration of the workload
-            container = self.unit.get_container("searxng")
-            # Verify that we can connect to the Pebble API in the workload container
-            if container.can_connect():
-                # Push an updated layer with the new config
-                container.add_layer("searxng", self._pebble_layer, combine=True)
-                container.replan()
+        if autocomplete not in VALID_AUTOCOMPLETE_BACKENDS:
+            # In this case, the config option is bad, so block the charm and notify the operator.
+            self.unit.status = BlockedStatus("invalid autocomplete backend: '{autocomplete}'")
+            return
 
-                logger.debug("Autocomplete backend changed to '%s'", autocomplete)
-                self.unit.status = ActiveStatus()
-            else:
+        if services != self._pebble_layer["services"]:
+            if not container.can_connect():
                 # We were unable to connect to the Pebble API, so we defer this event
                 event.defer()
                 self.unit.status = WaitingStatus("waiting for Pebble API")
-        else:
-            # In this case, the config option is bad, so block the charm and notify the operator.
-            self.unit.status = BlockedStatus("invalid autocomplete backend: '{autocomplete}'")
+                return
+
+            container.add_layer("searxng", self._pebble_layer, combine=True)
+            container.replan()
+            logging.info("Added updated layer 'searxng' to Pebble plan")
+
+            # change settings file inside the container
+            try:
+                container.exec(
+                    ["sed", "-i", "-e",
+                        f's/instance_name: "[^"]*"/instance_name: "{self.model.config["instance-name"]}"/',
+                        "/etc/searxng/settings.yml"]
+                ).wait_output()
+                container.exec(
+                    ["sed", "-i", "-e",
+                        f's/autocomplete: "[^"]*"/autocomplete: "{self.model.config["autocomplete"]}"/',
+                        "/etc/searxng/settings.yml"]
+                ).wait_output()
+            except ExecError as ex:
+                logging.debug(ex)
+
+            if container.get_service("searxng").is_running():
+                container.stop("searxng")
+
+            container.start("searxng")
+            logging.info("Restarted searxng service")
 
     @property
     def _pebble_layer(self):
@@ -94,7 +116,6 @@ class SearxngK8SCharm(CharmBase):
                     "command": "/usr/local/searxng/dockerfiles/docker-entrypoint.sh",
                     "startup": "enabled",
                     "environment": {
-                        "BASE_URL": str(self.model.config['base-url']),
                         "AUTOCOMPLETE": str(self.model.config['autocomplete']),
                         "INSTANCE_NAME": str(self.model.config['instance-name']),
                     },
