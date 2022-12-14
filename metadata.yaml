@@ -1,0 +1,38 @@
+# This file populates the Overview on Charmhub.
+# See https://juju.is/docs/sdk/metadata-reference for a checklist and guidance.
+
+# The charm package name, no spaces (required)
+# See https://juju.is/docs/sdk/naming#heading--naming-charms for guidance.
+name: searxng-k8s
+ 
+# The following metadata are human-readable and will be published prominently on Charmhub.
+
+# (Recommended)
+display-name: SearXNG
+
+# (Required)
+summary: Privacy-respecting, hackable metasearch engine
+
+description: |
+  SearXNG is a free internet metasearch engine which aggregates results from various search services and databases.
+  Users are neither tracked nor profiled.
+
+# The containers and resources metadata apply to Kubernetes charms only.
+# Remove them if not required.
+
+# Your workload’s containers.
+containers:
+  searxng:
+    resource: searxng-image
+
+# This field populates the Resources tab on Charmhub.
+resources:
+  # An OCI image resource for each container listed above.
+  # You may remove this if your charm will run without a workload sidecar container.
+  searxng-image:
+    type: oci-image
+    description: OCI image for searxng
+    # The upstream-source field is ignored by Juju. It is included here as a reference
+    # so the integration testing suite knows which image to deploy during testing. This field
+    # is also used by the 'canonical/charming-actions' Github action for automated releasing.
+    upstream-source: searxng/searxng

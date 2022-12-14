@@ -24,4 +24,3 @@ Describe your charm in one or two sentences.
 - [Contributing](CONTRIBUTING.md) <!-- or link to other contribution documentation -->
 
 - See the [Juju SDK documentation](https://juju.is/docs/sdk) for more information about developing and improving charms.
-
