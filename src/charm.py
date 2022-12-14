@@ -102,6 +102,8 @@ class SearxngK8SCharm(CharmBase):
 
             container.start("searxng")
             logging.info("Restarted searxng service")
+            if self.unit.get_container("searxng").can_connect():
+                self.unit.status = ActiveStatus()
 
     @property
     def _pebble_layer(self):
