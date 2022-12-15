@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 import ops.testing
-from ops.model import ActiveStatus, BlockedStatus, WaitingStatus, Container
+from ops.model import ActiveStatus, BlockedStatus, Container, WaitingStatus
 from ops.testing import Harness
 
 from charm import SearxngK8SCharm
@@ -47,7 +47,7 @@ class TestCharm(unittest.TestCase):
                         },
                     }
                 },
-            }
+            },
         )
         # Check the service was started
         service = self.harness.model.unit.get_container("searxng").get_service("searxng")
@@ -59,8 +59,6 @@ class TestCharm(unittest.TestCase):
         with patch.object(Container, "exec", return_value=MockExecProcess()):
             # Ensure the simulated Pebble API is reachable
             self.harness.set_can_connect("searxng", True)
-            # start the container (increases coverage)
-            container = self.harness.model.unit.get_container("searxng")
             # Trigger a config-changed event with an updated value
             self.harness.update_config({"instance-name": "foo"})
             # Get the plan now we've run PebbleReady

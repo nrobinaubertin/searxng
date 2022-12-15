@@ -22,7 +22,16 @@ from ops.pebble import ExecError
 # Log messages can be retrieved using juju debug-log
 logger = logging.getLogger(__name__)
 
-VALID_AUTOCOMPLETE_BACKENDS = ["", "dbpedia", "duckduckgo", "google", "startpage", "swisscows", "qwant", "wikipedia"]
+VALID_AUTOCOMPLETE_BACKENDS = [
+    "",
+    "dbpedia",
+    "duckduckgo",
+    "google",
+    "startpage",
+    "swisscows",
+    "qwant",
+    "wikipedia",
+]
 
 
 class SearxngK8SCharm(CharmBase):
@@ -85,14 +94,22 @@ class SearxngK8SCharm(CharmBase):
             # change settings file inside the container
             try:
                 container.exec(
-                    ["sed", "-i", "-e",
+                    [
+                        "sed",
+                        "-i",
+                        "-e",
                         f's/instance_name: "[^"]*"/instance_name: "{self.model.config["instance-name"]}"/',
-                        "/etc/searxng/settings.yml"]
+                        "/etc/searxng/settings.yml",
+                    ]
                 ).wait_output()
                 container.exec(
-                    ["sed", "-i", "-e",
+                    [
+                        "sed",
+                        "-i",
+                        "-e",
                         f's/autocomplete: "[^"]*"/autocomplete: "{self.model.config["autocomplete"]}"/',
-                        "/etc/searxng/settings.yml"]
+                        "/etc/searxng/settings.yml",
+                    ]
                 ).wait_output()
             except ExecError as ex:
                 logging.debug(ex)
@@ -118,8 +135,8 @@ class SearxngK8SCharm(CharmBase):
                     "command": "/usr/local/searxng/dockerfiles/docker-entrypoint.sh",
                     "startup": "enabled",
                     "environment": {
-                        "AUTOCOMPLETE": str(self.model.config['autocomplete']),
-                        "INSTANCE_NAME": str(self.model.config['instance-name']),
+                        "AUTOCOMPLETE": str(self.model.config["autocomplete"]),
+                        "INSTANCE_NAME": str(self.model.config["instance-name"]),
                     },
                 }
             },
