@@ -22,7 +22,7 @@ You can package the charm using [charmcraft](https://github.com/canonical/charmc
 
 ```shell
 charmcraft pack
-juju deploy ./searxng-k8s_ubuntu-22.04-amd64.charm --resource searxng-image='searxng/searxng'
+juju deploy ./searxng_ubuntu-22.04-amd64.charm --resource searxng-image='searxng/searxng'
 ```
 
 After deployment, check the unit's IP with `juju status` and visit it's `8080` port.
