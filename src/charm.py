@@ -13,7 +13,9 @@ develop a new k8s charm using the Operator Framework:
 """
 
 import logging
+import os
 
+import yaml
 from ops.charm import CharmBase
 from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
@@ -92,27 +94,13 @@ class SearxngK8SCharm(CharmBase):
             logging.info("Added updated layer 'searxng' to Pebble plan")
 
             # change settings file inside the container
-            try:
-                container.exec(
-                    [
-                        "sed",
-                        "-i",
-                        "-e",
-                        f's/instance_name: "[^"]*"/instance_name: "{self.model.config["instance-name"]}"/',
-                        "/etc/searxng/settings.yml",
-                    ]
-                ).wait_output()
-                container.exec(
-                    [
-                        "sed",
-                        "-i",
-                        "-e",
-                        f's/autocomplete: "[^"]*"/autocomplete: "{self.model.config["autocomplete"]}"/',
-                        "/etc/searxng/settings.yml",
-                    ]
-                ).wait_output()
-            except ExecError as ex:
-                logging.debug(ex)
+            container.push(
+                "/etc/searxng/settings.yml",
+                self._gen_searxng_config(
+                    self.model.config["instance-name"], self.model.config["autocomplete"]
+                ),
+                make_dirs=True,
+            )
 
             if container.get_service("searxng").is_running():
                 container.stop("searxng")
@@ -141,6 +129,16 @@ class SearxngK8SCharm(CharmBase):
                 }
             },
         }
+
+    def _gen_searxng_config(self, instance_name: str, autocomplete: str) -> str:
+        settings: dict = {}
+        with open(
+            os.path.join(os.path.dirname(__file__), "settings_default.yml")
+        ) as default_settings_file:
+            settings = yaml.safe_load(default_settings_file.read())
+            settings["general"]["instance_name"] = instance_name
+            settings["search"]["autocomplete"] = autocomplete
+        return yaml.safe_dump(settings)
 
 
 if __name__ == "__main__":  # pragma: nocover

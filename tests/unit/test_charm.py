@@ -13,10 +13,6 @@ from ops.testing import Harness
 from charm import SearxngK8SCharm
 
 
-class MockExecProcess(object):
-    wait_output = MagicMock(return_value=("", None))
-
-
 class TestCharm(unittest.TestCase):
     def setUp(self):
         # Enable more accurate simulation of container networking.
@@ -56,37 +52,34 @@ class TestCharm(unittest.TestCase):
         self.assertEqual(self.harness.model.unit.status, ActiveStatus())
 
     def test_config_changed_valid_can_connect(self):
-        with patch.object(Container, "exec", return_value=MockExecProcess()):
-            # Ensure the simulated Pebble API is reachable
-            self.harness.set_can_connect("searxng", True)
-            # Trigger a config-changed event with an updated value
-            self.harness.update_config({"instance-name": "foo"})
-            # Get the plan now we've run PebbleReady
-            updated_plan = self.harness.get_container_pebble_plan("searxng").to_dict()
-            updated_env = updated_plan["services"]["searxng"]["environment"]
-            # Check the config change was effective
-            self.assertEqual(
-                updated_env,
-                {
-                    "AUTOCOMPLETE": "",
-                    "INSTANCE_NAME": "foo",
-                },
-            )
-            self.assertEqual(self.harness.model.unit.status, ActiveStatus())
+        # Ensure the simulated Pebble API is reachable
+        self.harness.set_can_connect("searxng", True)
+        # Trigger a config-changed event with an updated value
+        self.harness.update_config({"instance-name": "foo"})
+        # Get the plan now we've run PebbleReady
+        updated_plan = self.harness.get_container_pebble_plan("searxng").to_dict()
+        updated_env = updated_plan["services"]["searxng"]["environment"]
+        # Check the config change was effective
+        self.assertEqual(
+            updated_env,
+            {
+                "AUTOCOMPLETE": "",
+                "INSTANCE_NAME": "foo",
+            },
+        )
+        self.assertEqual(self.harness.model.unit.status, ActiveStatus())
 
     def test_config_changed_valid_cannot_connect(self):
-        with patch.object(Container, "exec", return_value=MockExecProcess()):
+        container = self.harness.model.unit.get_container("searxng")
+        with patch.object(container, "can_connect", MagicMock(return_value=False)):
+            # Ensure the simulated Pebble API is reachable
+            self.harness.set_can_connect("searxng", True)
 
-            container = self.harness.model.unit.get_container("searxng")
-            with patch.object(container, "can_connect", MagicMock(return_value=False)):
-                # Ensure the simulated Pebble API is reachable
-                self.harness.set_can_connect("searxng", True)
+            # Trigger a config-changed event with an updated value
+            self.harness.update_config({"instance-name": "foo"})
 
-                # Trigger a config-changed event with an updated value
-                self.harness.update_config({"instance-name": "foo"})
-
-                # Check the charm is in WaitingStatus
-                self.assertIsInstance(self.harness.model.unit.status, WaitingStatus)
+            # Check the charm is in WaitingStatus
+            self.assertIsInstance(self.harness.model.unit.status, WaitingStatus)
 
     def test_config_changed_invalid(self):
         # Ensure the simulated Pebble API is reachable
