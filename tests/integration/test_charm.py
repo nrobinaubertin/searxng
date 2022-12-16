@@ -26,9 +26,7 @@ async def test_build_and_deploy(ops_test: OpsTest, metadata):
     """
     # Build and deploy charm from local source folder
     charm = await ops_test.build_charm(".")
-    resources = {
-        "searxng-image": metadata["resources"]["searxng-image"]["upstream-source"]
-    }
+    resources = {"searxng-image": metadata["resources"]["searxng-image"]["upstream-source"]}
 
     # Deploy the charm and wait for active/idle status
     await asyncio.gather(
