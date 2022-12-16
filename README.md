@@ -1,5 +1,3 @@
-# SearXNG
-
 <h1 align="center">
     <img src="searxng.svg">
 </h1>
