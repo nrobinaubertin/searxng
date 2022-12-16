@@ -19,7 +19,6 @@ import yaml
 from ops.charm import CharmBase
 from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
-from ops.pebble import ExecError
 
 # Log messages can be retrieved using juju debug-log
 logger = logging.getLogger(__name__)
@@ -52,8 +51,15 @@ class SearxngK8SCharm(CharmBase):
 
         Learn more about interacting with Pebble at at https://juju.is/docs/sdk/pebble.
         """
+
         # Get a reference the container attribute on the PebbleReadyEvent
         container = event.workload
+
+        # Check that the pebble socket is up
+        if not container.can_connect():
+            event.defer()
+            return
+
         # Add initial Pebble config layer using the Pebble API
         container.add_layer("searxng", self._pebble_layer, combine=True)
         # Make Pebble reevaluate its plan, ensuring any services are started if enabled.
