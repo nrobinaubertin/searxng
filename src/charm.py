@@ -13,7 +13,8 @@ develop a new k8s charm using the Operator Framework:
 """
 
 import logging
-import os
+import secrets
+from pathlib import Path
 
 import yaml
 from ops.charm import CharmBase
@@ -137,13 +138,10 @@ class SearxngK8SCharm(CharmBase):
         }
 
     def _gen_searxng_config(self, instance_name: str, autocomplete: str) -> str:
-        settings: dict = {}
-        with open(
-            os.path.join(os.path.dirname(__file__), "settings_default.yml")
-        ) as default_settings_file:
-            settings = yaml.safe_load(default_settings_file.read())
-            settings["general"]["instance_name"] = instance_name
-            settings["search"]["autocomplete"] = autocomplete
+        settings = yaml.safe_load(Path(__file__).with_name("settings_default.yml").read_text())
+        settings["general"]["instance_name"] = instance_name
+        settings["search"]["autocomplete"] = autocomplete
+        settings["server"]["secret_key"] = secrets.token_urlsafe(16)
         return yaml.safe_dump(settings)
 
 
