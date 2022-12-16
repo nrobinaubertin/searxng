@@ -3,7 +3,7 @@
 
 # The charm package name, no spaces (required)
 # See https://juju.is/docs/sdk/naming#heading--naming-charms for guidance.
-name: searxng-k8s
+name: searxng
  
 # The following metadata are human-readable and will be published prominently on Charmhub.
 
