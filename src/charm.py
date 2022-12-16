@@ -78,6 +78,12 @@ class SearxngK8SCharm(CharmBase):
         """
 
         container = self.unit.get_container("searxng")
+        if not container.can_connect():
+            # We were unable to connect to the Pebble API, so we defer this event
+            event.defer()
+            self.unit.status = WaitingStatus("waiting for Pebble API")
+            return
+
         services = container.get_plan().to_dict().get("services", {})
 
         # Fetch the new config value
@@ -89,12 +95,6 @@ class SearxngK8SCharm(CharmBase):
             return
 
         if services != self._pebble_layer["services"]:
-            if not container.can_connect():
-                # We were unable to connect to the Pebble API, so we defer this event
-                event.defer()
-                self.unit.status = WaitingStatus("waiting for Pebble API")
-                return
-
             container.add_layer("searxng", self._pebble_layer, combine=True)
             container.replan()
             logging.info("Added updated layer 'searxng' to Pebble plan")
