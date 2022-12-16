@@ -1,27 +1,26 @@
-<!--
-Avoid using this README file for information that is maintained or published elsewhere, e.g.:
+<h1 align="center">
+    <img src="searxng.svg">
+</h1>
 
-* metadata.yaml > published on Charmhub
-* documentation > published on (or linked to from) Charmhub
-* detailed contribution guide > documentation or CONTRIBUTING.md
+<h4 align="center">An operator charm for SearXNG</h4>
 
-Use links instead.
--->
+## What is SearXNG ?
 
-# searxng-k8s
+[SearXNG](https://searxng.org) is a free internet
+[metasearch engine](https://en.wikipedia.org/wiki/Metasearch_engine) which
+aggregates results from various search services and databases.
+Users are neither tracked nor profiled.  
 
-Charmhub package name: operator-template
-More information: https://charmhub.io/searxng-k8s
+## Usage
 
-Describe your charm in one or two sentences.
+This [Juju](https://juju.is/) [charm](https://juju.is/docs/olm/charmed-operators)
+must be deployed on a kubernetes substrate.  
 
-## Other resources
+You can package the charm using [charmcraft](https://github.com/canonical/charmcraft).
 
-<!-- If your charm is documented somewhere else other than Charmhub, provide a link separately. -->
+```shell
+charmcraft pack
+juju deploy ./searxng_ubuntu-22.04-amd64.charm --resource searxng-image='searxng/searxng'
+```
 
-- [Read more](https://example.com)
-
-- [Contributing](CONTRIBUTING.md) <!-- or link to other contribution documentation -->
-
-- See the [Juju SDK documentation](https://juju.is/docs/sdk) for more information about developing and improving charms.
-
+After deployment, check the unit's IP with `juju status` and visit it's `8080` port.

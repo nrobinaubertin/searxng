@@ -1,0 +1,18 @@
+# This file defines charm config options, and populates the Configure tab on Charmhub.
+# If your charm does not require configuration options, delete this file entirely.
+#
+# See https://juju.is/docs/config for guidance.
+
+options:
+  instance-name:
+    description: |
+      Configures the displayed name of the instance.
+    default: "searxng"
+    type: string
+  autocomplete:
+    description: |
+      Choose an autocomplete backend.
+      Existing autocomplete backends: "dbpedia", "duckduckgo", "google", "startpage", "swisscows", "qwant", "wikipedia".
+      Leave blank to turn it off by default
+    default: ""
+    type: string
