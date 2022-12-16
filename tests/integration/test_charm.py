@@ -2,38 +2,48 @@
 # Copyright 2022 Niels Robin-Aubertin
 # See LICENSE file for licensing details.
 
-import asyncio
 import logging
-from pathlib import Path
 
 import pytest
-import yaml
+import requests
+from ops.model import ActiveStatus, Application
 from pytest_operator.plugin import OpsTest
 
 logger = logging.getLogger(__name__)
 
 
-@pytest.fixture
-def metadata():
-    return yaml.safe_load(Path("./metadata.yaml").read_text())
-
-
+@pytest.mark.asyncio
 @pytest.mark.abort_on_fail
-async def test_build_and_deploy(ops_test: OpsTest, metadata):
-    """Build the charm-under-test and deploy it together with related charms.
-
-    Assert on the unit status before any relations/configurations take place.
+async def test_service_reachable(ops_test: OpsTest, app: Application):
+    """Check that the starting page is reachable.
+    Assume that the charm has already been built and is running.
     """
-    # Build and deploy charm from local source folder
-    charm = await ops_test.build_charm(".")
-    resources = {"searxng-image": metadata["resources"]["searxng-image"]["upstream-source"]}
+    assert app.units[0].workload_status == ActiveStatus.name
+    assert ops_test.model
+    status = await ops_test.model.get_status()
+    unit = list(status.applications[app.name].units)[0]
+    address = status["applications"][app.name]["units"][unit]["address"]
+    response = requests.get(f"http://{address}:8080")
+    assert response.status_code == 200
 
-    # Deploy the charm and wait for active/idle status
-    await asyncio.gather(
-        ops_test.model.deploy(
-            charm, resources=resources, application_name=metadata["name"], series="jammy"
-        ),
-        ops_test.model.wait_for_idle(
-            apps=[metadata["name"]], status="active", raise_on_blocked=True, timeout=1000
-        ),
-    )
+
+@pytest.mark.asyncio
+@pytest.mark.abort_on_fail
+async def test_instance_name_change(ops_test: OpsTest, app: Application):
+    """Check that the starting page is reachable.
+    Assume that the charm has already been built and is running.
+    """
+    assert ops_test.model
+    application = ops_test.model.applications[app.name]
+
+    await application.set_config({"instance-name": "foobar"})
+    await ops_test.model.wait_for_idle(status=ActiveStatus.name)
+    assert application.status == ActiveStatus.name
+
+    status = await ops_test.model.get_status()
+    unit = list(status.applications[app.name].units)[0]
+    address = status["applications"][app.name]["units"][unit]["address"]
+    response = requests.get(f"http://{address}:8080")
+
+    assert response.status_code == 200
+    assert "<title>foobar</title>" in response.text
