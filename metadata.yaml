@@ -17,6 +17,9 @@ description: |
   SearXNG is a free internet metasearch engine which aggregates results from various search services and databases.
   Users are neither tracked nor profiled.
 
+assumes:
+  - k8s-api
+
 # The containers and resources metadata apply to Kubernetes charms only.
 # Remove them if not required.
 
