@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 import ops.testing
-from ops.model import ActiveStatus, BlockedStatus, Container, WaitingStatus
+from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
 from ops.testing import Harness
 
 from charm import SearxngK8SCharm
@@ -54,7 +54,8 @@ class TestCharm(unittest.TestCase):
     def test_config_changed_valid_can_connect(self):
         # Ensure the simulated Pebble API is reachable
         self.harness.set_can_connect("searxng", True)
-        # Trigger a config-changed event with an updated value
+        # Trigger a config-changed event with some updated values
+        self.harness.update_config({"autocomplete": "wikipedia"})
         self.harness.update_config({"instance-name": "foo"})
         # Get the plan now we've run PebbleReady
         updated_plan = self.harness.get_container_pebble_plan("searxng").to_dict()
@@ -63,7 +64,7 @@ class TestCharm(unittest.TestCase):
         self.assertEqual(
             updated_env,
             {
-                "AUTOCOMPLETE": "",
+                "AUTOCOMPLETE": "wikipedia",
                 "INSTANCE_NAME": "foo",
             },
         )
